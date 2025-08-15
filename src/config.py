@@ -8,6 +8,15 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL", "")
 
+# YouTube
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
+YOUTUBE_CHANNEL_ID = os.getenv("YOUTUBE_CHANNEL_ID", "")
+
+# Проверка
+if not YOUTUBE_API_KEY or not YOUTUBE_CHANNEL_ID:
+    print("Warning: YouTube variables are missing!")
+
+
 # OpenRouter
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.getenv(
