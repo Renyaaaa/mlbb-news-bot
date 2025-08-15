@@ -1,15 +1,17 @@
-import sys
-import os
-from sources.gamerbraves import GamerBravesML
-from sources.ml_official import MLOfficialNews
-from publisher.telegram_client import send_post
-from ai.generator import generate_post
-from storage.db import DB
+from config import YOUTUBE_API_KEY, YOUTUBE_CHANNEL_ID
+from googleapiclient.discovery import build
 from config import POST_LIMIT_PER_RUN, DRY_RUN
+from storage.db import DB
+from ai.generator import generate_post
+from publisher.telegram_client import send_post
+from sources.ml_official import MLOfficialNews
+from sources.gamerbraves import GamerBravesML
+import os
+import sys
+from dotenv import load_dotenv
+load_dotenv()
 
 # YouTube
-from googleapiclient.discovery import build
-from config import YOUTUBE_API_KEY, YOUTUBE_CHANNEL_ID
 
 # Добавляем путь для корректного импорта
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
