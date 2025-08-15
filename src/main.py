@@ -1,9 +1,11 @@
-from config import POST_LIMIT_PER_RUN, DRY_RUN
-from storage.db import DB
-from ai.generator import generate_post
-from publisher.telegram_client import send_post
-from sources.ml_official import MLOfficialNews
 from sources.gamerbraves import GamerBravesML
+from sources.ml_official import MLOfficialNews
+from publisher.telegram_client import send_post
+from ai.generator import generate_post
+from storage.db import DB
+from config import POST_LIMIT_PER_RUN, DRY_RUN
+from flask import Flask
+import threading
 import time
 import sys
 import os
@@ -50,9 +52,26 @@ def run_once():
                 return
 
 
-if __name__ == "__main__":
+def loop_every_4_hours():
     while True:
         print("=== Checking for new news ===")
         run_once()
         print("Sleeping for 4 hours...")
-        time.sleep(4 * 60 * 60)  # 4 часа
+        time.sleep(4 * 60 * 60)
+
+
+# Создаём поток для фонового выполнения
+threading.Thread(target=loop_every_4_hours, daemon=True).start()
+
+# Flask-приложение, чтобы контейнер не останавливался
+app = Flask(__name__)
+
+
+@app.route("/")
+def index():
+    return "Bot is running!"
+
+
+if __name__ == "__main__":
+    # В Railway обычно порт 8080
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
