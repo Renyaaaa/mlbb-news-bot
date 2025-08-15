@@ -1,9 +1,9 @@
-name: Run MLBB News Bot Every 4 Hours
+name: Run MLBB News Bot
 
 on:
   schedule:
     - cron: '0 */4 * * *'  # каждые 4 часа
-  workflow_dispatch:  # чтобы можно запускать вручную
+  workflow_dispatch:        # запуск вручную
 
 jobs:
   run-bot:
@@ -19,7 +19,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Run bot
-        run: python main.py
+      - name: Run run_main.py
+        run: python src/run_main.py
