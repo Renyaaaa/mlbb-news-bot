@@ -4,4 +4,4 @@ beautifulsoup4
 lxml
 openai
 python-dotenv
-flask
+google-api-python-client
