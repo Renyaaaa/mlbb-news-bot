@@ -18,13 +18,15 @@ SYSTEM_PROMPT = (
 )
 
 USER_TEMPLATE = (
-    "Create a unique short post about the hero {hero} from Mobile Legends: Bang Bang. "
-    "Constraints: 1–2 short sentences, max 50 words. "
-    "Style: catchy, hype, and mysterious. "
-    "Mention a trick or tip or tutorial (without too much detail). "
-    "End with a call to action like 'Check the video 👇'. "
-    "Do not invent abilities that don't exist. "
-    "Do not include hashtags."
+    "Create a completely unique and specific post about the hero {hero} from Mobile Legends: Bang Bang. "
+    "Focus on their unique abilities, playstyle, or specific mechanics that make them special. "
+    "Mention a specific trick, combo, or strategy that is unique to this hero. "
+    "Make it sound exciting and different from any other hero post. "
+    "Constraints: 1-2 sentences, max 60 words. "
+    "Style: unique, hype, and specific to this hero. "
+    "End with 'Check the video 👇'. "
+    "Do not use generic phrases like 'unleash power' or 'master the art'. "
+    "Be specific about what makes {hero} unique."
 )
 
 # Fallback шаблоны для генерации постов
@@ -38,30 +40,55 @@ FALLBACK_TEMPLATES = [
     "🎮 {hero} is the hero you've been waiting for! Learn their unique playstyle and dominate every match! Check the video 👇",
     "🌟 {hero} can turn any game around! Master their skills and become the MVP your team needs! Check the video 👇",
     "💪 {hero} is your path to victory! This tutorial reveals the strategies that make them unstoppable! Check the video 👇",
-    "🎲 {hero} is the wildcard that wins games! Learn their unpredictable playstyle and surprise your enemies! Check the video 👇"
+    "🎲 {hero} is the wildcard that wins games! Learn their unpredictable playstyle and surprise your enemies! Check the video 👇",
+    "🔥 Master {hero}'s signature combo and watch enemies fall! This guide reveals the timing that makes all the difference! Check the video 👇",
+    "⚡ {hero} isn't just strong - they're strategically brilliant! Learn the positioning that makes them unstoppable! Check the video 👇",
+    "🎯 Every {hero} player needs to know this! Master their unique mechanics and dominate the battlefield! Check the video 👇",
+    "💎 {hero} has a secret that most players miss! Discover the build and strategy that wins games! Check the video 👇",
+    "🚀 Ready to master {hero}? This tutorial shows you the advanced techniques that separate pros from amateurs! Check the video 👇"
 ]
 
 # Персонализированные посты для конкретных героев
 HERO_SPECIFIC_POSTS = {
     "Layla": [
         "🎯 {hero} is the ultimate late-game carry! Master farming and positioning to become unstoppable! Check the video 👇",
-        "💥 {hero} can 1v5 the entire enemy team! Learn the positioning that makes her a nightmare! Check the video 👇"
+        "💥 {hero} can 1v5 the entire enemy team! Learn the positioning that makes her a nightmare! Check the video 👇",
+        "🎯 {hero}'s range is her weapon! Master the distance and watch enemies fall before they can reach you! Check the video 👇"
     ],
     "Claude": [
         "⚡ {hero} is the fastest marksman alive! Master his mobility and kite enemies to death! Check the video 👇",
-        "🎭 {hero} is the trickster of the battlefield! Learn his unique mechanics and outplay everyone! Check the video 👇"
+        "🎭 {hero} is the trickster of the battlefield! Learn his unique mechanics and outplay everyone! Check the video 👇",
+        "⚡ {hero}'s dash is everything! Master the timing and positioning to become untouchable! Check the video 👇"
     ],
     "Hanabi": [
         "🌸 {hero} blooms in team fights! Master her ultimate timing and watch enemies fall like petals! Check the video 👇",
-        "💫 {hero} is the queen of positioning! Learn how to stay safe while dealing massive damage! Check the video 👇"
+        "💫 {hero} is the queen of positioning! Learn how to stay safe while dealing massive damage! Check the video 👇",
+        "🌸 {hero}'s ultimate can change the entire game! Master the timing and watch your team dominate! Check the video 👇"
     ],
     "Balmond": [
         "🪓 {hero} is the executioner! Master his ultimate timing and secure every kill! Check the video 👇",
-        "💀 {hero} brings death to the battlefield! Learn his aggressive playstyle and dominate! Check the video 👇"
+        "💀 {hero} brings death to the battlefield! Learn his aggressive playstyle and dominate! Check the video 👇",
+        "🪓 {hero}'s spin is his signature move! Master the timing and watch enemies fall! Check the video 👇"
     ],
     "Uranus": [
         "🛡️ {hero} is the unbreakable shield! Master his defensive mechanics and protect your team! Check the video 👇",
-        "🌌 {hero} controls the battlefield! Learn his zoning abilities and control every fight! Check the video 👇"
+        "🌌 {hero} controls the battlefield! Learn his zoning abilities and control every fight! Check the video 👇",
+        "🛡️ {hero} is the ultimate protector! Master his taunt timing and save your carries! Check the video 👇"
+    ],
+    "Minsitthar": [
+        "⚔️ {hero} is the battlefield commander! Master his ultimate timing and control every team fight! Check the video 👇",
+        "🛡️ {hero} leads from the front! Learn his initiation and watch your team dominate! Check the video 👇",
+        "⚔️ {hero}'s ultimate is game-changing! Master the positioning and secure every objective! Check the video 👇"
+    ],
+    "Akai": [
+        "🐼 {hero} is the ultimate disruptor! Master his ultimate timing and scatter enemy formations! Check the video 👇",
+        "🛡️ {hero} controls the battlefield! Learn his positioning and protect your carries! Check the video 👇",
+        "🐼 {hero}'s ultimate can win team fights! Master the timing and watch enemies panic! Check the video 👇"
+    ],
+    "Dyrroth": [
+        "🔥 {hero} is the beast of the battlefield! Master his ultimate timing and dominate every fight! Check the video 👇",
+        "⚔️ {hero} brings raw power! Learn his combo timing and watch enemies fall! Check the video 👇",
+        "🔥 {hero}'s ultimate is devastating! Master the positioning and secure every kill! Check the video 👇"
     ]
 }
 
@@ -155,6 +182,20 @@ def generate_with_openrouter(hero: str) -> str:
         return None
 
 
+def clean_text_for_telegram(text: str, max_length: int = 1000) -> str:
+    """
+    Очищает текст для отправки в Telegram
+    """
+    # Убираем лишние пробелы и переносы строк
+    cleaned = " ".join(text.split())
+
+    # Ограничиваем длину
+    if len(cleaned) > max_length:
+        cleaned = cleaned[:max_length-3] + "..."
+
+    return cleaned
+
+
 def generate_hero_post(hero: str, video_url: str) -> str:
     """
     Генерирует короткий пост для героя с YouTube ссылкой.
@@ -177,6 +218,9 @@ def generate_hero_post(hero: str, video_url: str) -> str:
                 # Добавляем ссылку на видео, если её нет
                 if video_url not in content:
                     content += f"\n\n{video_url}"
+
+                # Очищаем текст для Telegram
+                content = clean_text_for_telegram(content)
                 return content
         except Exception as e:
             print(f"    ⚠️ {provider_name} недоступен: {e}")
@@ -195,6 +239,9 @@ def generate_hero_post(hero: str, video_url: str) -> str:
 
     fallback_text = fallback_template.format(hero=hero)
     fallback_text += f"\n\n{video_url}"
+
+    # Очищаем fallback текст тоже
+    fallback_text = clean_text_for_telegram(fallback_text)
 
     print(f"✅ Fallback генератор создал: {fallback_text}")
     return fallback_text
