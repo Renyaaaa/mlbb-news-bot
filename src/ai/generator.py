@@ -22,37 +22,26 @@ USER_TEMPLATE = (
 
 
 def generate_hero_post(hero: str, video_url: str) -> str:
-    if not OPENROUTER_API_KEY:
-        # Fallback если API-ключа нет
-        return f"{hero} trick is waiting for you! 🔥\nCheck the video 👇\n{video_url}"
-
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "model": OPENROUTER_MODEL,
-        "temperature": 0.9,  # больше креативности
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": USER_TEMPLATE.format(hero=hero)},
-        ],
-    }
+    """
+    Генерирует короткий пост для героя с YouTube ссылкой.
+    """
+    SYSTEM_PROMPT = f"You are a news writer for a Mobile Legends Telegram channel. Write short, catchy posts in {LANGUAGE} with emojis and hashtags."
+    USER_TEMPLATE = f"Create a short, engaging post for the hero {hero}.\nInclude a call to watch the video:"
 
     try:
-        r = requests.post(OPENROUTER_URL, json=payload,
-                          headers=headers, timeout=40)
-        r.raise_for_status()
-        data = r.json()
-        content = data["choices"][0]["message"]["content"].strip()
-
-        # добавляем ссылку в конце
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": USER_TEMPLATE}
+            ]
+        )
+        # новый синтаксис SDK
+        content = response.choices[0].message['content'].strip()
         if video_url not in content:
             content += f"\n{video_url}"
-
         return content
-
     except Exception as e:
-        # fallback
-        return f"{hero} trick is waiting for you! 🔥\nCheck the video 👇\n{video_url}"
+        print("⚠️ OpenRouter error:", e)
+        # fallback текст
+        return f"{hero} tutorial is waiting for you! 🔥\nCheck the video 👇\n{video_url}"

@@ -19,8 +19,8 @@ if not YOUTUBE_API_KEY or not YOUTUBE_CHANNEL_ID:
 
 # OpenRouter
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_MODEL = os.getenv(
-    "OPENROUTER_MODEL", "meta-llama/llama-3-8b-instruct")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "gpt-4o-mini")
+
 
 POST_LIMIT_PER_RUN = int(os.getenv("POST_LIMIT_PER_RUN", "2"))
 LANGUAGE = os.getenv("LANGUAGE", "en")
