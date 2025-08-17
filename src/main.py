@@ -1,106 +1,95 @@
-from config import YOUTUBE_API_KEY, YOUTUBE_CHANNEL_ID
-from googleapiclient.discovery import build
-from config import DRY_RUN
-from storage.db import DB
-from ai.generator import generate_post
-from publisher.telegram_client import send_post
-from sources.ml_official import MLOfficialNews
-from sources.gamerbraves import GamerBravesML
 import os
 import sys
+import random
 from datetime import datetime
 from dotenv import load_dotenv
+
+from config import YOUTUBE_API_KEY, YOUTUBE_CHANNEL_ID, DRY_RUN
+from googleapiclient.discovery import build
+
+from storage.db import DB
+from ai.generator import generate_hero_post
+from publisher.telegram_client import send_post
+from heroes_list import HEROES  # список всех 126 героев
+
 load_dotenv()
 
 # Добавляем путь для корректного импорта
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-SOURCES = [MLOfficialNews(), GamerBravesML()]
+
+def pick_new_hero(db: DB) -> str:
+    """Выбираем случайного героя, которого ещё не постили"""
+    used = db.used_heroes()
+    remaining = [h for h in HEROES if h not in used]
+
+    if not remaining:
+        print("Все герои уже использованы! 🎉 Сбрасываем прогресс.")
+        db.reset_heroes()
+        remaining = HEROES[:]
+
+    return random.choice(remaining)
 
 
-def run_news():
-    db = DB()
-
-    for source in SOURCES:
-        try:
-            items = source.fetch(limit=3)  # проверим несколько последних
-        except Exception as e:
-            print(f"Failed to fetch from {source.name}: {e}")
-            continue
-
-        for item in items:
-            if db.seen(item.url):
-                continue
-
-            post_text = generate_post(item.title, item.url, item.summary)
-
-            if DRY_RUN:
-                print("=== TEST POST ===")
-                print(post_text)
-                print("=================")
-                return
-
-            success = send_post(post_text)
-            if success:
-                db.add_if_absent(item.url, item.title,
-                                 source.name, item.published_at)
-                db.mark_posted(item.url)
-                print(f"Posted news from {source.name}: {item.title}")
-                return  # публикуем только 1 новость за запуск
-
-
-def run_youtube():
-    db = DB()
-    youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
-
+def find_hero_video(youtube, hero_name: str) -> tuple[str, str, str] | None:
+    """Ищем видео на YouTube по имени героя"""
     request = youtube.search().list(
         part="snippet",
         channelId=YOUTUBE_CHANNEL_ID,
-        order="date",
-        maxResults=1   # только последнее видео
+        q=hero_name,
+        order="relevance",
+        maxResults=1
     )
     response = request.execute()
+    items = response.get("items", [])
 
-    for item in response.get("items", []):
+    for item in items:
         if item["id"]["kind"] != "youtube#video":
             continue
-
         video_id = item["id"]["videoId"]
         video_title = item["snippet"]["title"]
         video_url = f"https://www.youtube.com/watch?v={video_id}"
-        published_at = item["snippet"]["publishedAt"]
+        return video_title, video_url, item["snippet"]["publishedAt"]
 
-        # проверяем — публиковалось ли это видео
-        if db.seen(video_url):
-            print(f"Already posted video: {video_url}")
-            return
+    return None
 
-        # публикуем только если видео вышло сегодня
-        published_date = datetime.strptime(
-            published_at, "%Y-%m-%dT%H:%M:%SZ").date()
-        today = datetime.utcnow().date()
 
-        if published_date < today:
-            print(f"Video is older than today: {video_url}")
-            return
+def run_hero_post():
+    db = DB()
+    youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
-        post_text = f"Новое видео на YouTube:\n\n{video_title}\n{video_url}"
+    hero = pick_new_hero(db)
+    print(f"🎯 Выбран герой: {hero}")
 
-        if DRY_RUN:
-            print("=== TEST POST ===")
-            print(post_text)
-            print("=================")
-            return
+    video_data = find_hero_video(youtube, hero)
+    if not video_data:
+        print(f"⚠️ Видео по герою {hero} не найдено")
+        return
 
-        success = send_post(post_text)
-        if success:
-            db.add_if_absent(video_url, video_title, "YouTube", published_at)
-            db.mark_posted(video_url)
-            print(f"Posted YouTube video: {video_title}")
+    video_title, video_url, published_at = video_data
+
+    # Проверяем — публиковалось ли это видео
+    if db.seen(f"hero:{hero}"):
+        print(f"Герой {hero} уже был опубликован")
+        return
+
+    # Генерируем пост через AI
+    post_text = generate_hero_post(hero=hero, video_url=video_url)
+
+    if DRY_RUN:
+        print("=== TEST POST ===")
+        print(post_text)
+        print("=================")
+        return
+
+    success = send_post(post_text)
+    if success:
+        db.add_if_absent(f"hero:{hero}", hero, "HeroTrick", published_at)
+        db.mark_posted(f"hero:{hero}")
+        print(f"✅ Опубликован пост с героем {hero}")
 
 
 if __name__ == "__main__":
-    print("=== Running MLBB News + YouTube Bot ===")
-    run_news()
-    run_youtube()
+    print("=== Running MLBB Hero Trick Bot ===")
+    run_hero_post()
     print("=== Run finished ===")

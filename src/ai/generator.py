@@ -1,56 +1,58 @@
 import os
 import requests
-from typing import Optional
-from config import OPENROUTER_API_KEY, OPENROUTER_MODEL, LANGUAGE
-
+from config import OPENROUTER_API_KEY, OPENROUTER_MODEL
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 SYSTEM_PROMPT = (
-    "You are a social media editor for a Mobile Legends: Bang Bang Telegram channel. "
-    "Write concise, enthusiastic, and factual posts in English. Never invent facts."
+    "You are a Mobile Legends: Bang Bang content creator for a Telegram channel. "
+    "Your task is to write short, hype, and engaging posts in English about tricks or tips or tutorial with specific heroes. "
+    "Keep it fun, natural, and like social media captions. Avoid long explanations."
 )
 
 USER_TEMPLATE = (
-    "Rewrite the following news into a short Telegram post in English. "
-    "Constraints: 2-4 short sentences, no more than 220 words total. "
-    "Use 1-3 fitting emojis and 2-5 relevant hashtags at the end. "
-    "Keep it factual; do not add release dates or details not present in the input.\n\n"
-    "Title: {title}\n"
-    "Link: {url}\n"
-    "Optional summary: {summary}"
+    "Create a unique short post about the hero {hero} from Mobile Legends: Bang Bang. "
+    "Constraints: 1–2 short sentences, max 50 words. "
+    "Style: catchy, hype, and mysterious. "
+    "Mention a trick or tip or tutorial (without too much detail). "
+    "End with a call to action like 'Check the video 👇'. "
+    "Do not invent abilities that don't exist. "
+    "Do not include hashtags."
 )
 
 
-def generate_post(title: str, url: str, summary: Optional[str] = None) -> str:
+def generate_hero_post(hero: str, video_url: str) -> str:
     if not OPENROUTER_API_KEY:
-        # Fallback без ИИ — безопасно и полезно для отладки
-        base = f"{title}\n\n{url}"
-        return base
+        # Fallback если API-ключа нет
+        return f"{hero} trick is waiting for you! 🔥\nCheck the video 👇\n{video_url}"
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
     }
+
     payload = {
         "model": OPENROUTER_MODEL,
-        "temperature": 0.7,
+        "temperature": 0.9,  # больше креативности
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": USER_TEMPLATE.format(
-                title=title, url=url, summary=summary or "")},
+            {"role": "user", "content": USER_TEMPLATE.format(hero=hero)},
         ],
     }
+
     try:
         r = requests.post(OPENROUTER_URL, json=payload,
                           headers=headers, timeout=40)
         r.raise_for_status()
         data = r.json()
         content = data["choices"][0]["message"]["content"].strip()
-        # На всякий случай добавим ссылку в конце
-        if url not in content:
-            content += f"\n\n{url}"
+
+        # добавляем ссылку в конце
+        if video_url not in content:
+            content += f"\n{video_url}"
+
         return content
+
     except Exception as e:
-        # Не ломаем весь пайплайн, возвращаем fallback
-        return f"{title}\n\n{url}"
+        # fallback
+        return f"{hero} trick is waiting for you! 🔥\nCheck the video 👇\n{video_url}"
